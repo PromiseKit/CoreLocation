@@ -2,14 +2,28 @@ language: objective-c
 osx_image: xcode8
 
 env:
-  - ACTION=test  PLATFORM=Mac     DESTINATION='platform=OS X'
-  - ACTION=test  PLATFORM=iOS     DESTINATION='platform=iOS Simulator,name=iPhone 6S' UUID='7FC06F6D-AF72-4B38-9A96-1F934EA2E27F'
-  - ACTION=test  PLATFORM=tvOS    DESTINATION='platform=tvOS Simulator,name=Apple TV 1080p' UUID='0DF1B136-A3A7-4C51-AE6E-CFEFDF52DA24'
-  - ACTION=build PLATFORM=watchOS DESTINATION='platform=watchOS Simulator,name=Apple Watch - 38mm'
-  
+  - PLATFORM=Mac
+  - PLATFORM=iOS NAME='iPhone SE'
+  - PLATFORM=tvOS NAME='Apple TV 1080p'
+  - PLATFORM=watchOS
+
+before_install:
+  - if [ -n "$NAME" ]; then
+      export UUID=$(instruments -s | ruby -e "ARGF.each_line{ |ln| ln =~ /$NAME .* \[(.*)\]/; if \$1; puts(\$1); exit; end }");
+    fi
+
 install:
   - carthage bootstrap --platform $PLATFORM
 
 script:
-  - if [ -n "$UUID" ]; then xcrun instruments -w "$UUID" || true; sleep 15; fi
-  - set -o pipefail && xcodebuild -scheme PMKCoreLocation -destination "$DESTINATION" $ACTION | xcpretty
+  - set -o pipefail;
+    case $PLATFORM in
+    Mac)
+      xcodebuild -scheme PMKCoreLocation test | xcpretty;;
+    iOS|tvOS)
+      xcrun instruments -w "$UUID";
+      sleep 15;
+      xcodebuild -scheme PMKCoreLocation -destination "id=$UUID" test | xcpretty;;
+    watchOS)
+      xcodebuild -scheme PMKCoreLocation -destination "name=Apple Watch - 38mm" | xcpretty;;
+    esac
