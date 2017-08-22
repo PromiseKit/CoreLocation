@@ -1,30 +1,41 @@
+os: osx
 language: objective-c
-osx_image: xcode8.3
 matrix:
-  include:
-    - osx_image: xcode8
-    - osx_image: xcode8.1
-    - osx_image: xcode8.2
-    - osx_image: xcode9
-env:
-  - PLATFORM=Mac
-  - PLATFORM=iOS NAME='iPhone SE'
-  - PLATFORM=tvOS NAME='Apple TV 1080p'
-  - PLATFORM=watchOS
-before_install:
-  - if [ -n "$NAME" ]; then
-      export UUID=$(instruments -s | ruby -e "ARGF.each_line{ |ln| ln =~ /$NAME .* \[(.*)\]/; if \$1; puts(\$1); exit; end }");
-    fi
+  include:                                              
+    - {osx_image: xcode8.2, env: 'PLAT=macOS    SWFT=3.0  DST="arch:x86_64"'}
+    - {osx_image: xcode8.2, env: 'PLAT=iOS      SWFT=3.0  DST="OS=9.3,iPhone SE"'}
+    - {osx_image: xcode8.2, env: 'PLAT=iOS      SWFT=3.0  DST="OS=10.2,iPhone SE"'}
+    - {osx_image: xcode8.2, env: 'PLAT=tvOS     SWFT=3.0  DST="OS=9.2,Apple TV 1080p"'}
+    - {osx_image: xcode8.2, env: 'PLAT=tvOS     SWFT=3.0  DST="OS=10.1,Apple TV 1080p"'}
+    - {osx_image: xcode8.2, env: 'PLAT=watchOS  SWFT=3.0  DST="OS=3.1,name=Apple Watch - 38mm"'}
+
+    - {osx_image: xcode8.3, env: 'PLAT=macOS    SWFT=3.1  DST="arch:x86_64"'}
+    - {osx_image: xcode8.3, env: 'PLAT=iOS      SWFT=3.0  DST="OS=9.3,iPhone SE"'}
+    - {osx_image: xcode8.3, env: 'PLAT=iOS      SWFT=3.1  DST="OS=10.3.1,iPhone SE"'}
+    - {osx_image: xcode8.3, env: 'PLAT=tvOS     SWFT=3.0  DST="OS=9.2,Apple TV 1080p"'}
+    - {osx_image: xcode8.3, env: 'PLAT=tvOS     SWFT=3.1  DST="OS=10.2,Apple TV 1080p"'}
+    - {osx_image: xcode8.3, env: 'PLAT=watchOS  SWFT=3.1  DST="OS=3.2,name=Apple Watch - 38mm"'}
+
+    - {osx_image: xcode9,   env: 'PLAT=macOS    SWFT=3.2  DST="arch:x86_64"'}
+    - {osx_image: xcode9,   env: 'PLAT=iOS      SWFT=3.2  DST="OS=10.3.1,iPhone SE"'}
+    - {osx_image: xcode9,   env: 'PLAT=iOS      SWFT=3.2  DST="OS=11.0,iPhone SE"'}
+    - {osx_image: xcode9,   env: 'PLAT=tvOS     SWFT=3.2  DST="OS=10.2,Apple TV 1080p"'}
+    - {osx_image: xcode9,   env: 'PLAT=tvOS     SWFT=3.2  DST="OS=11.0,Apple TV 1080p"'}
+    - {osx_image: xcode9,   env: 'PLAT=watchOS  SWFT=3.2  DST="OS=3.2,name=Apple Watch - 38mm"'}
+    - {osx_image: xcode9,   env: 'PLAT=watchOS  SWFT=3.2  DST="OS=4.0,name=Apple Watch - 38mm"'}
+
+    - {osx_image: xcode9,   env: 'PLAT=macOS    SWFT=4.0  DST="arch:x86_64"'}
+    - {osx_image: xcode9,   env: 'PLAT=iOS      SWFT=4.0  DST="OS=10.3.1,iPhone SE"'}
+    - {osx_image: xcode9,   env: 'PLAT=iOS      SWFT=4.0  DST="OS=11.0,iPhone SE"'}
+    - {osx_image: xcode9,   env: 'PLAT=tvOS     SWFT=4.0  DST="OS=10.2,Apple TV 1080p"'}
+    - {osx_image: xcode9,   env: 'PLAT=tvOS     SWFT=4.0  DST="OS=11.0,Apple TV 1080p"'}
+    - {osx_image: xcode9,   env: 'PLAT=watchOS  SWFT=4.0  DST="OS=3.2,name=Apple Watch - 38mm"'}
+    - {osx_image: xcode9,   env: 'PLAT=watchOS  SWFT=4.0  DST="OS=4.0,name=Apple Watch - 38mm"'}
 install:
-  - carthage bootstrap --platform $PLATFORM
+  - carthage bootstrap --platform $PLAT
 script:
-  - set -o pipefail;
-    case $PLATFORM in
-    Mac)
-      xcodebuild -scheme PMKCoreLocation test | xcpretty;;
-    iOS|tvOS)
-      open -a "simulator" --args -CurrentDeviceUDID "$UUID";
-      xcodebuild -scheme PMKCoreLocation -destination "id=$UUID" test | xcpretty;;
-    watchOS)
-      xcodebuild -scheme PMKCoreLocation -destination "name=Apple Watch - 38mm" | xcpretty;;
-    esac
+  - set -o pipefail
+  - xcodebuild -scheme PMKCoreLocation -quiet -destination "$DST" build SWIFT_VERSION=$SWFT
+  - if [ "$PLAT" != "watchOS" ]; then
+      xcodebuild -scheme PMKCoreLocation -quiet -destination "$DST" test;
+    fi
