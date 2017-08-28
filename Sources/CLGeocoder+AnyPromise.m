@@ -6,10 +6,6 @@
 
 @implementation CLGeocoder (PromiseKit)
 
-+ (void)load {
-    [NSError registerCancelledErrorDomain:kCLErrorDomain code:kCLErrorGeocodeCanceled];
-}
-
 - (AnyPromise *)reverseGeocode:(CLLocation *)location {
     return [AnyPromise promiseWithResolverBlock:^(PMKResolver resolve) {
        [self reverseGeocodeLocation:location completionHandler:^(NSArray *placemarks, NSError *error) {

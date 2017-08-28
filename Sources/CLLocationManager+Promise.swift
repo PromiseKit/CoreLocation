@@ -1,5 +1,5 @@
 import CoreLocation.CLLocationManager
-#if !COCOAPODS
+#if !PMKCOCOAPODS
 import PromiseKit
 #endif
 
@@ -27,11 +27,6 @@ extension CLLocationManager {
         case whenInUse
     }
 
-    fileprivate class func promiseDoneForLocationManager(_ manager: CLLocationManager) -> Void {
-        manager.delegate = nil
-        manager.stopUpdatingLocation()
-    }
-  
     /**
       - Returns: A new promise that fulfills with the most recent CLLocation.
       - Note: To return all locations call `allResults()`. 
@@ -40,38 +35,40 @@ extension CLLocationManager {
       want to force one or the other, change this parameter from its default
       value.
      */
-    public class func promise(_ requestAuthorizationType: RequestAuthorizationType = .automatic) -> LocationPromise {
-        return promise(yielding: auther(requestAuthorizationType))
+    public class func requestLocation(authorizationType: RequestAuthorizationType = .automatic) -> Promise<[CLLocation]> {
+        return promise(yielding: auther(authorizationType))
     }
 
-    private class func promise(yielding yield: (CLLocationManager) -> Void = { _ in }) -> LocationPromise {
+    @available(*, deprecated: 5.0, renamed: "requestLocation")
+    public class func promise(_ requestAuthorizationType: RequestAuthorizationType = .automatic) -> Promise<[CLLocation]> {
+        return requestLocation(authorizationType: requestAuthorizationType)
+    }
+
+    private class func promise(yielding yield: (CLLocationManager) -> Void = { _ in }) -> Promise<[CLLocation]> {
         let manager = LocationManager()
         manager.delegate = manager
         yield(manager)
         manager.startUpdatingLocation()
-        _ = manager.promise.always {
-            CLLocationManager.promiseDoneForLocationManager(manager)
+        _ = manager.promise.ensure {
+            manager.stopUpdatingLocation()
         }
         return manager.promise
     }
 }
 
 private class LocationManager: CLLocationManager, CLLocationManagerDelegate {
-    let (promise, fulfill, reject) = LocationPromise.foo()
+    let (promise, seal) = Promise<[CLLocation]>.pending()
 
-    @objc fileprivate func locationManager(_ manager: CLLocationManager, didUpdateLocations ll: [CLLocation]) {
-        let locations = ll 
-        fulfill(locations)
-        CLLocationManager.promiseDoneForLocationManager(manager)
+    @objc fileprivate func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        seal.fulfill(locations)
     }
 
     @objc func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        let error = error as NSError
-        if error.code == CLError.locationUnknown.rawValue && error.domain == kCLErrorDomain {
+        let (domain, code) = { ($0.domain, $0.code) }(error as NSError)
+        if code == CLError.locationUnknown.rawValue && domain == kCLErrorDomain {
             // Apple docs say you should just ignore this error
         } else {
-            reject(error)
-            CLLocationManager.promiseDoneForLocationManager(manager)
+            seal.reject(error)
         }
     }
 }
@@ -80,22 +77,17 @@ private class LocationManager: CLLocationManager, CLLocationManagerDelegate {
 #if os(iOS)
 
 extension CLLocationManager {
-    /**
-     Cannot error, despite the fact this might be more useful in some
-     circumstances, we stick with our decision that errors are errors
-     and errors only. Thus your catch handler is always catching failures
-     and not being abused for logic.
-    */
+    /// request CoreLocation authorization from user
     @available(iOS 8, *)
-    public class func requestAuthorization(type: RequestAuthorizationType = .automatic) -> Promise<CLAuthorizationStatus> {
+    public class func requestAuthorization(type: RequestAuthorizationType = .automatic) -> Guarantee<CLAuthorizationStatus> {
         return AuthorizationCatcher(auther: auther(type), type: type).promise
     }
 }
 
 @available(iOS 8, *)
 private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate {
-    let (promise, fulfill, _) = Promise<CLAuthorizationStatus>.pending()
-    var retainCycle: AnyObject?
+    let (promise, fulfill) = Guarantee<CLAuthorizationStatus>.pending()
+    var retainCycle: AuthorizationCatcher?
 
     init(auther: (CLLocationManager) -> Void, type: CLLocationManager.RequestAuthorizationType) {
         super.init()
@@ -108,12 +100,14 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
         default:
             fulfill(status)
         }
+        promise.done { _ in
+            self.retainCycle = nil
+        }
     }
 
     @objc fileprivate func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         if status != .notDetermined {
             fulfill(status)
-            retainCycle = nil
         }
     }
 }
@@ -155,28 +149,5 @@ private func auther(_ requestAuthorizationType: CLLocationManager.RequestAuthori
 }
 
 #endif
-
-
-/// The promise returned by CLLocationManager.promise()
-public class LocationPromise: Promise<CLLocation> {
-    // convoluted for concurrency guarantees
-    private let (parentPromise, fulfill, reject) = Promise<[CLLocation]>.pending()
-
-    /// Convert the promise so that all Location results are returned
-    public func asArray() -> Promise<[CLLocation]> {
-        return parentPromise
-    }
-
-    fileprivate class func foo() -> (LocationPromise, ([CLLocation]) -> Void, (Error) -> Void) {
-        var fulfill: ((CLLocation) -> Void)!
-        var reject: ((Error) -> Void)!
-        let promise = LocationPromise { fulfill = $0; reject = $1 }
-
-        _ = promise.parentPromise.then(on: zalgo) { fulfill($0.last!) }
-        promise.parentPromise.catch(on: zalgo, execute: reject)
-
-        return (promise, promise.fulfill, promise.reject)
-    }
-}
 
 #endif
