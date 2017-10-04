@@ -88,7 +88,7 @@ extension CLLocationManager {
     */
     @available(iOS 8, *)
     public class func requestAuthorization(type: RequestAuthorizationType = .automatic) -> Promise<CLAuthorizationStatus> {
-        return AuthorizationCatcher(auther: auther(type)).promise
+        return AuthorizationCatcher(auther: auther(type), type: type).promise
     }
 }
 
@@ -97,14 +97,22 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
     let (promise, fulfill, _) = Promise<CLAuthorizationStatus>.pending()
     var retainCycle: AnyObject?
 
-    init(auther: (CLLocationManager)->()) {
+    init(auther: @escaping (CLLocationManager)->(), type: RequestAuthorizationType) {
         super.init()
         let status = CLLocationManager.authorizationStatus()
-        if status == .notDetermined {
-            delegate = self
+
+        let performAuth = {
+            self.delegate = self
             auther(self)
-            retainCycle = self
-        } else {
+            self.retainCycle = self
+        }
+
+        switch (status, type) {
+        case (.notDetermined, _):
+            performAuth()
+        case (.authorizedWhenInUse, .always):
+            performAuth()
+        default:
             fulfill(status)
         }
     }
