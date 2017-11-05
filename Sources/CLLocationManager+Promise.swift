@@ -88,7 +88,7 @@ extension CLLocationManager {
     */
     @available(iOS 8, *)
     public class func requestAuthorization(type: RequestAuthorizationType = .automatic) -> Promise<CLAuthorizationStatus> {
-        return AuthorizationCatcher(auther: auther(type)).promise
+        return AuthorizationCatcher(auther: auther(type), type: type).promise
     }
 }
 
@@ -97,14 +97,15 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
     let (promise, fulfill, _) = Promise<CLAuthorizationStatus>.pending()
     var retainCycle: AnyObject?
 
-    init(auther: (CLLocationManager)->()) {
+    init(auther: (CLLocationManager) -> Void, type: CLLocationManager.RequestAuthorizationType) {
         super.init()
         let status = CLLocationManager.authorizationStatus()
-        if status == .notDetermined {
+        switch (status, type) {
+        case (.notDetermined, _), (.authorizedWhenInUse, .always), (.authorizedWhenInUse, .automatic):
             delegate = self
             auther(self)
             retainCycle = self
-        } else {
+        default:
             fulfill(status)
         }
     }
@@ -128,12 +129,12 @@ private func auther(_ requestAuthorizationType: CLLocationManager.RequestAuthori
 
         switch requestAuthorizationType {
         case .automatic:
-            let always = hasInfoPlistKey("NSLocationAlwaysUsageDescription")
-            let whenInUse = hasInfoPlistKey("NSLocationWhenInUseUsageDescription")
+            let always = hasInfoPlistKey("NSLocationAlwaysUsageDescription") || hasInfoPlistKey("NSLocationAlwaysAndWhenInUsageDescription")
+            let whenInUse = { hasInfoPlistKey("NSLocationWhenInUseUsageDescription") }
             if always {
                 manager.requestAlwaysAuthorization()
             } else {
-                if !whenInUse { NSLog("PromiseKit: Warning: `NSLocationWhenInUseUsageDescription` key not set") }
+                if !whenInUse() { NSLog("PromiseKit: Warning: `NSLocationWhenInUseUsageDescription` key not set") }
                 manager.requestWhenInUseAuthorization()
             }
         case .whenInUse:
