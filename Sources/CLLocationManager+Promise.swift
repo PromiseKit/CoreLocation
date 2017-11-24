@@ -74,7 +74,7 @@ private class LocationManager: CLLocationManager, CLLocationManagerDelegate {
 }
 
 
-#if os(iOS)
+#if os(iOS) || os(watchOS)
 
 extension CLLocationManager {
     /// request CoreLocation authorization from user
