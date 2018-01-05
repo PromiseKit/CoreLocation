@@ -27,25 +27,33 @@ extension CLLocationManager {
         case whenInUse
     }
 
-    /**
-      - Returns: A new promise that fulfills with the most recent CLLocation.
-      - Note: To return all locations call `allResults()`. 
-      - Parameter requestAuthorizationType: We read your Info plist and try to
-      determine the authorization type we should request automatically. If you
-      want to force one or the other, change this parameter from its default
-      value.
-     */
-    public class func requestLocation(authorizationType: RequestAuthorizationType = .automatic) -> Promise<[CLLocation]> {
-        return promise(yielding: auther(authorizationType))
+    /// Request a single location using promises
+    /// - Note: To return all locations call `allResults()`.
+    ///
+    /// - Parameters:
+    ///   - authorizationType: requestAuthorizationType: We read your Info plist and try to
+    ///     determine the authorization type we should request automatically. If you
+    ///     want to force one or the other, change this parameter from its default
+    ///     value.
+    ///   - block: A block by which to perform any filtering of the locations
+    ///            that are returned. For example:
+    ///                 - In order to only retrieve accurate locations, only
+    ///                   return true if the locations horizontal accuracy < 50
+    ///
+    /// - Returns: A new promise that fulfills with the most recent CLLocation
+    ///            that satisfies the provided block if it exists. If the block
+    ///            does not exist, simply return the last location.
+    public class func requestLocation(authorizationType: RequestAuthorizationType = .automatic, satisfying block: ((CLLocation) -> Bool)? = nil) -> Promise<[CLLocation]> {
+        return promise(yielding: auther(authorizationType), satisfying: block)
     }
 
     @available(*, deprecated: 5.0, renamed: "requestLocation")
-    public class func promise(_ requestAuthorizationType: RequestAuthorizationType = .automatic) -> Promise<[CLLocation]> {
-        return requestLocation(authorizationType: requestAuthorizationType)
+    public class func promise(_ requestAuthorizationType: RequestAuthorizationType = .automatic, satisfying block: ((CLLocation) -> Bool)? = nil) -> Promise<[CLLocation]> {
+        return requestLocation(authorizationType: requestAuthorizationType, satisfying: block)
     }
 
-    private class func promise(yielding yield: (CLLocationManager) -> Void = { _ in }) -> Promise<[CLLocation]> {
-        let manager = LocationManager()
+    private class func promise(yielding yield: (CLLocationManager) -> Void = { _ in }, satisfying block: ((CLLocation) -> Bool)? = nil) -> Promise<[CLLocation]> {
+        let manager = LocationManager(satisfying: block)
         manager.delegate = manager
         yield(manager)
         manager.startUpdatingLocation()
@@ -58,9 +66,19 @@ extension CLLocationManager {
 
 private class LocationManager: CLLocationManager, CLLocationManagerDelegate {
     let (promise, seal) = Promise<[CLLocation]>.pending()
+    let satisfyingBlock: ((CLLocation) -> Bool)?
 
     @objc fileprivate func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        seal.fulfill(locations)
+        if let block = satisfyingBlock {
+            let satisfiedLocations = locations.filter { block($0) == true }
+            seal.fulfill(satisfiedLocations)
+        } else {
+            seal.fulfill(locations)
+        }
+    }
+
+    init(satisfying block: ((CLLocation) -> Bool)? = nil) {
+        self.satisfyingBlock = block
     }
 
     @objc func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
