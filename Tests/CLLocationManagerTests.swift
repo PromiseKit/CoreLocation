@@ -19,6 +19,20 @@ class Test_CLLocationManager_Swift: XCTestCase {
         }
     }
 
+    func test_fufillsWithSatisfyingBlock() {
+        swizzle(CLLocationManager.self, #selector(CLLocationManager.startUpdatingLocation)) {
+            let ex = expectation(description: "")
+            let block: ((CLLocation) -> Bool) = { location in
+                return location.coordinate.latitude == dummy.last?.coordinate.latitude
+            }
+            CLLocationManager.promise(satisfying: block).done({ locations in
+                locations.forEach { XCTAssert(block($0) == true, "Block should be successful for returned values") }
+                ex.fulfill()
+            })
+            waitForExpectations(timeout: 1, handler: nil)
+        }
+    }
+
 #if os(iOS)
     func test_requestAuthorization() {
         let ex = expectation(description: "")
