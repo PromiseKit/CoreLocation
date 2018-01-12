@@ -106,17 +106,27 @@ extension CLLocationManager {
 private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate {
     let (promise, fulfill) = Guarantee<CLAuthorizationStatus>.pending()
     var retainCycle: AuthorizationCatcher?
+    var whenInUseOk = true
 
     init(auther: (CLLocationManager) -> Void, type: CLLocationManager.RequestAuthorizationType) {
         super.init()
         let status = CLLocationManager.authorizationStatus()
-        switch (status, type) {
-        case (.notDetermined, _), (.authorizedWhenInUse, .always), (.authorizedWhenInUse, .automatic):
-            delegate = self
-            auther(self)
-            retainCycle = self
-        default:
-            fulfill(status)
+        if #available(iOS 11, *) {
+            switch (status, type) {
+            case (.authorizedWhenInUse, .always), (.authorizedWhenInUse, .automatic):
+                whenInUseOk = false  // allow iOS 11 upgrade pattern
+                fallthrough
+            case (.notDetermined, _):
+                delegate = self
+                auther(self)
+                retainCycle = self
+            default:
+                fulfill(status)
+            }
+        } else {
+            if status != .notDetermined {
+                fulfill(status)
+            }
         }
         promise.done { _ in
             self.retainCycle = nil
@@ -124,7 +134,7 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
     }
 
     @objc fileprivate func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        if status != .notDetermined {
+        if status != .notDetermined, whenInUseOk || status != .authorizedWhenInUse {
             fulfill(status)
         }
     }
