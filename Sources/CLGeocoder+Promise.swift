@@ -1,5 +1,5 @@
 import CoreLocation.CLGeocoder
-#if !PMKCOCOAPODS
+#if !PMKCocoaPods
 import PromiseKit
 #endif
 
