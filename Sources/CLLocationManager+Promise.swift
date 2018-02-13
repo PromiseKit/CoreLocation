@@ -1,5 +1,5 @@
 import CoreLocation.CLLocationManager
-#if !PMKCOCOAPODS
+#if !PMKCocoaPods
 import PromiseKit
 #endif
 
