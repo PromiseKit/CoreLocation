@@ -177,7 +177,7 @@ import PromiseKit
         }
     }
     
-    #else
+#else
     
     private func auther(_ requestAuthorizationType: CLLocationManager.RequestAuthorizationType) -> (CLLocationManager) -> Void {
         return { _ in }
