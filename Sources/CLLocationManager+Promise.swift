@@ -98,6 +98,7 @@ private class LocationManager: CLLocationManager, CLLocationManagerDelegate {
 
 extension CLLocationManager {
     /// request CoreLocation authorization from user
+    /// NOTE if you want to do whenInUse -> always upgrades then you must specify the auth-type yourself.
     @available(iOS 8, *)
     public class func requestAuthorization(type: RequestAuthorizationType = .automatic) -> Guarantee<CLAuthorizationStatus> {
         return AuthorizationCatcher(auther: auther(type), type: type).promise
@@ -108,17 +109,21 @@ extension CLLocationManager {
 private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate {
     let (promise, fulfill) = Guarantee<CLAuthorizationStatus>.pending()
     var retainCycle: AuthorizationCatcher?
+    let initialAuthorizationState = CLLocationManager.authorizationStatus()
 
     init(auther: (CLLocationManager) -> Void, type: CLLocationManager.RequestAuthorizationType) {
         super.init()
-        let status = CLLocationManager.authorizationStatus()
-        switch (status, type) {
-        case (.notDetermined, _), (.authorizedWhenInUse, .always), (.authorizedWhenInUse, .automatic):
+        switch (initialAuthorizationState, type) {
+        case (.authorizedWhenInUse, .always), (.authorizedWhenInUse, .automatic):
+            if #available(iOS 11.0, tvOS 100.0, watchOS 100.0, macOS 100.0, *) {
+                fallthrough
+            }
+        case (.notDetermined, _):
             delegate = self
             auther(self)
             retainCycle = self
         default:
-            fulfill(status)
+            fulfill(initialAuthorizationState)
         }
         promise.done { _ in
             self.retainCycle = nil
@@ -126,7 +131,8 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
     }
 
     @objc fileprivate func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        if status != .notDetermined {
+        // `didChange` is a lie; it fires this immediately with the current status.
+        if status != initialAuthorizationState {
             fulfill(status)
         }
     }
@@ -143,12 +149,12 @@ private func auther(_ requestAuthorizationType: CLLocationManager.RequestAuthori
 
         switch requestAuthorizationType {
         case .automatic:
-            let always = hasInfoPlistKey("NSLocationAlwaysUsageDescription") || hasInfoPlistKey("NSLocationAlwaysAndWhenInUsageDescription")
+            let always = hasInfoPlistKey("NSLocationAlwaysUsageDescription") || hasInfoPlistKey("NSLocationAlwaysAndWhenInUseUsageDescription")
             let whenInUse = { hasInfoPlistKey("NSLocationWhenInUseUsageDescription") }
             if always {
                 manager.requestAlwaysAuthorization()
             } else {
-                if !whenInUse() { NSLog("PromiseKit: Warning: `NSLocationWhenInUseUsageDescription` key not set") }
+                if !whenInUse() { NSLog("PromiseKit: Warning: `NSLocationAlwaysAndWhenInUseUsageDescription` key not set") }
                 manager.requestWhenInUseAuthorization()
             }
         case .whenInUse:
