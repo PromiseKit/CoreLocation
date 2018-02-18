@@ -70,8 +70,10 @@ private class LocationManager: CLLocationManager, CLLocationManagerDelegate {
 
     @objc fileprivate func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let block = satisfyingBlock {
-            let satisfiedLocations = locations.filter { block($0) == true }
-            seal.fulfill(satisfiedLocations)
+            let satisfiedLocations = locations.filter(block)
+            if satisfiedLocations.count > 0 {
+                seal.fulfill(satisfiedLocations)
+            }
         } else {
             seal.fulfill(locations)
         }
