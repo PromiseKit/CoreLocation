@@ -3,6 +3,9 @@ import CoreLocation.CLGeocoder
 import PromiseKit
 #endif
 
+import Contacts
+
+
 /**
  To import the `CLGeocoder` category:
 
@@ -39,6 +42,14 @@ extension CLGeocoder {
     public func geocode(_ addressString: String, region: CLRegion?) -> Promise<[CLPlacemark]> {
         return Promise { seal in
             geocodeAddressString(addressString, in: region, completionHandler: seal.resolve)
+        }
+    }
+    
+    /// Submits a forward-geocoding request using the specified postal address.
+    @available(iOS 11.0, OSX 10.13, watchOS 4.0, *)
+    public func geocodePostalAddress(_ postalAddress: CNPostalAddress) -> Promise<[CLPlacemark]> {
+        return Promise { seal in
+            geocodePostalAddress(postalAddress, completionHandler: seal.resolve)
         }
     }
 }

@@ -3,6 +3,8 @@ import CoreLocation
 import PromiseKit
 import XCTest
 
+import Contacts
+
 class CLGeocoderTests: XCTestCase {
     func test_reverseGeocodeLocation() {
         class MockGeocoder: CLGeocoder {
@@ -49,6 +51,24 @@ class CLGeocoderTests: XCTestCase {
 
         let ex = expectation(description: "")
         MockGeocoder().geocode("").done { x in
+            XCTAssertEqual(x, [dummyPlacemark])
+            ex.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+    }
+    
+    @available(iOS 11.0, OSX 10.13, watchOS 4.0, *)
+    func test_geocodePostalAddress() {
+        class MockGeocoder: CLGeocoder {
+            override func geocodePostalAddress(_ postalAddress: CNPostalAddress, completionHandler: @escaping CLGeocodeCompletionHandler) {
+                after(.seconds(0)).done {
+                    completionHandler([dummyPlacemark], nil)
+                }
+            }
+        }
+        
+        let ex = expectation(description: "")
+        MockGeocoder().geocodePostalAddress(CNPostalAddress()).done { x in
             XCTAssertEqual(x, [dummyPlacemark])
             ex.fulfill()
         }
