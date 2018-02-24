@@ -48,7 +48,6 @@ extension CLGeocoder {
 #if !os(tvOS) && swift(>=3.2)
     /// Submits a forward-geocoding request using the specified postal address.
     @available(iOS 11.0, OSX 10.13, watchOS 4.0, *)
-    @available(tvOS, unavailable)
     public func geocodePostalAddress(_ postalAddress: CNPostalAddress) -> Promise<[CLPlacemark]> {
         return Promise { seal in
             geocodePostalAddress(postalAddress, completionHandler: seal.resolve)
