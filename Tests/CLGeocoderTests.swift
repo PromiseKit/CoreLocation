@@ -3,7 +3,7 @@ import CoreLocation
 import PromiseKit
 import XCTest
 #if os(iOS) || os(watchOS) || os(OSX)
-    import Contacts
+    import class Contacts.CNPostalAddress
 #endif
 
 class CLGeocoderTests: XCTestCase {
@@ -57,9 +57,9 @@ class CLGeocoderTests: XCTestCase {
         }
         waitForExpectations(timeout: 1)
     }
-    
+
+#if !os(tvOS) && swift(>=3.2)
     @available(iOS 11.0, OSX 10.13, watchOS 4.0, *)
-    @available(tvOS, unavailable)
     func test_geocodePostalAddress() {
         class MockGeocoder: CLGeocoder {
             override func geocodePostalAddress(_ postalAddress: CNPostalAddress, completionHandler: @escaping CLGeocodeCompletionHandler) {
@@ -95,7 +95,7 @@ class CLGeocoderTests: XCTestCase {
         }
         waitForExpectations(timeout: 1)
     }
-    
+#endif
 }
 
 private let dummyPlacemark = CLPlacemark()
