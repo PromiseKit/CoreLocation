@@ -2,6 +2,9 @@ import PMKCoreLocation
 import CoreLocation
 import PromiseKit
 import XCTest
+#if os(iOS) || os(watchOS) || os(OSX)
+    import class Contacts.CNPostalAddress
+#endif
 
 class CLGeocoderTests: XCTestCase {
     func test_reverseGeocodeLocation() {
