@@ -2,6 +2,9 @@ import CoreLocation.CLGeocoder
 #if !PMKCocoaPods
 import PromiseKit
 #endif
+#if os(iOS) || os(watchOS) || os(OSX)
+import class Contacts.CNPostalAddress
+#endif
 
 /**
  To import the `CLGeocoder` category:
@@ -41,6 +44,25 @@ extension CLGeocoder {
             geocodeAddressString(addressString, in: region, completionHandler: seal.resolve)
         }
     }
+
+#if !os(tvOS) && swift(>=3.2)
+    /// Submits a forward-geocoding request using the specified postal address.
+    @available(iOS 11.0, OSX 10.13, watchOS 4.0, *)
+    @available(tvOS, unavailable)
+    public func geocodePostalAddress(_ postalAddress: CNPostalAddress) -> Promise<[CLPlacemark]> {
+        return Promise { seal in
+            geocodePostalAddress(postalAddress, completionHandler: seal.resolve)
+        }
+    }
+
+    /// Submits a forward-geocoding requesting using the specified locale and postal address
+    @available(iOS 11.0, OSX 10.13, watchOS 4.0, *)
+    public func geocodePostalAddress(_ postalAddress: CNPostalAddress, preferredLocale locale: Locale?) -> Promise<[CLPlacemark]> {
+        return Promise { seal in
+            geocodePostalAddress(postalAddress, preferredLocale: locale, completionHandler: seal.resolve)
+        }
+    }
+#endif
 }
 
 // TODO still not possible in Swift 3.2

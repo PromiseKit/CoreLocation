@@ -2,6 +2,9 @@ import PMKCoreLocation
 import CoreLocation
 import PromiseKit
 import XCTest
+#if os(iOS) || os(watchOS) || os(OSX)
+    import class Contacts.CNPostalAddress
+#endif
 
 class CLGeocoderTests: XCTestCase {
     func test_reverseGeocodeLocation() {
@@ -54,6 +57,45 @@ class CLGeocoderTests: XCTestCase {
         }
         waitForExpectations(timeout: 1)
     }
+
+#if !os(tvOS) && swift(>=3.2)
+    @available(iOS 11.0, OSX 10.13, watchOS 4.0, *)
+    func test_geocodePostalAddress() {
+        class MockGeocoder: CLGeocoder {
+            override func geocodePostalAddress(_ postalAddress: CNPostalAddress, completionHandler: @escaping CLGeocodeCompletionHandler) {
+                after(.seconds(0)).done {
+                    completionHandler([dummyPlacemark], nil)
+                }
+            }
+        }
+        
+        let ex = expectation(description: "")
+        MockGeocoder().geocodePostalAddress(CNPostalAddress()).done { x in
+            XCTAssertEqual(x, [dummyPlacemark])
+            ex.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+    }
+    
+    @available(iOS 11.0, OSX 10.13, watchOS 4.0, *)
+    @available(tvOS, unavailable)
+    func test_geocodePostalAddressLocale() {
+        class MockGeocoder: CLGeocoder {
+            override func geocodePostalAddress(_ postalAddress: CNPostalAddress, preferredLocale locale: Locale?, completionHandler: @escaping CLGeocodeCompletionHandler) {
+                after(.seconds(0)).done {
+                    completionHandler([dummyPlacemark], nil)
+                }
+            }
+        }
+        
+        let ex = expectation(description: "")
+        MockGeocoder().geocodePostalAddress(CNPostalAddress(), preferredLocale: nil).done { x in
+            XCTAssertEqual(x, [dummyPlacemark])
+            ex.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+    }
+#endif
 }
 
 private let dummyPlacemark = CLPlacemark()
