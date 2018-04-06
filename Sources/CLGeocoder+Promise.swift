@@ -25,6 +25,7 @@ extension CLGeocoder {
     }
 
     /// Submits a forward-geocoding request using the specified address dictionary.
+    @available(iOS, deprecated: 11.0)
     public func geocode(_ addressDictionary: [String: String]) -> Promise<[CLPlacemark]> {
         return Promise { seal in
             geocodeAddressDictionary(addressDictionary, completionHandler: seal.resolve)
@@ -32,6 +33,7 @@ extension CLGeocoder {
     }
 
     /// Submits a forward-geocoding request using the specified address string.
+    @available(iOS, deprecated: 11.0)
     public func geocode(_ addressString: String) -> Promise<[CLPlacemark]> {
         return Promise { seal in
             geocodeAddressString(addressString, completionHandler: seal.resolve)
