@@ -105,7 +105,6 @@ extension CLLocationManager {
     }
 }
 
-@available(iOS 8, *)
 private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate {
     let (promise, fulfill) = Guarantee<CLAuthorizationStatus>.pending()
     var retainCycle: AuthorizationCatcher?
@@ -115,7 +114,7 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
         super.init()
         switch (initialAuthorizationState, type) {
         case (.authorizedWhenInUse, .always), (.authorizedWhenInUse, .automatic):
-            if #available(iOS 11.0, tvOS 100.0, watchOS 100.0, macOS 100.0, *) {
+            if #available(iOS 11.0, *) {
                 fallthrough
             }
         case (.notDetermined, _):
