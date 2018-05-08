@@ -2,7 +2,6 @@
 #import <CoreLocation/CLError.h>
 #import <CoreLocation/CLErrorDomain.h>
 #import <PromiseKit/AnyPromise.h>
-#import <Contacts/CNPostalAddress.h>
 
 
 @implementation CLGeocoder (PromiseKit)
