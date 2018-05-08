@@ -8,28 +8,32 @@ import XCTest
 class Test_CLLocationManager_Swift: XCTestCase {
     func test_fulfills_with_multiple_locations() {
         swizzle(CLLocationManager.self, #selector(CLLocationManager.startUpdatingLocation)) {
-            let ex = expectation(description: "")
+            swizzle(CLLocationManager.self, #selector(CLLocationManager.authorizationStatus), isClassMethod: true) {
+                let ex = expectation(description: "")
 
-            CLLocationManager.promise().done { x in
-                XCTAssertEqual(x, dummy)
-                ex.fulfill()
+                CLLocationManager.requestLocation().done { x in
+                    XCTAssertEqual(x, dummy)
+                    ex.fulfill()
+                }
+
+                waitForExpectations(timeout: 1)
             }
-
-            waitForExpectations(timeout: 1, handler: nil)
         }
     }
 
     func test_fufillsWithSatisfyingBlock() {
         swizzle(CLLocationManager.self, #selector(CLLocationManager.startUpdatingLocation)) {
-            let ex = expectation(description: "")
-            let block: ((CLLocation) -> Bool) = { location in
-                return location.coordinate.latitude == dummy.last?.coordinate.latitude
+            swizzle(CLLocationManager.self, #selector(CLLocationManager.authorizationStatus), isClassMethod: true) {
+                let ex = expectation(description: "")
+                let block: ((CLLocation) -> Bool) = { location in
+                    return location.coordinate.latitude == dummy.last?.coordinate.latitude
+                }
+                CLLocationManager.requestLocation(satisfying: block).done({ locations in
+                    locations.forEach { XCTAssert(block($0) == true, "Block should be successful for returned values") }
+                    ex.fulfill()
+                })
+                waitForExpectations(timeout: 1)
             }
-            CLLocationManager.promise(satisfying: block).done({ locations in
-                locations.forEach { XCTAssert(block($0) == true, "Block should be successful for returned values") }
-                ex.fulfill()
-            })
-            waitForExpectations(timeout: 1, handler: nil)
         }
     }
 
@@ -56,6 +60,10 @@ extension CLLocationManager {
         after(.milliseconds(100)).done {
             self.delegate!.locationManager?(self, didUpdateLocations: dummy)
         }
+    }
+
+    @objc static func pmk_authorizationStatus() -> CLAuthorizationStatus {
+        return .authorizedWhenInUse
     }
 }
 

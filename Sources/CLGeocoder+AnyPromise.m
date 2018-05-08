@@ -2,6 +2,7 @@
 #import <CoreLocation/CLError.h>
 #import <CoreLocation/CLErrorDomain.h>
 #import <PromiseKit/AnyPromise.h>
+#import <Contacts/CNPostalAddress.h>
 
 
 @implementation CLGeocoder (PromiseKit)
@@ -20,7 +21,10 @@
             resolve(error ?: PMKManifold(placemarks.firstObject, placemarks));
         };
         if ([address isKindOfClass:[NSDictionary class]]) {
+        #pragma clang diagnostic push
+        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
             [self geocodeAddressDictionary:address completionHandler:handler];
+        #pragma clang diagnostic pop
         } else {
             [self geocodeAddressString:address completionHandler:handler];
         }
