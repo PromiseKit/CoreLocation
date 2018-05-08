@@ -213,6 +213,8 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
 
         func ask(type: PMKCLAuthorizationType) {
             delegate = self
+            retainCycle = self
+
             switch type {
             case .always:
             #if os(tvOS)
@@ -223,7 +225,10 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
             case .whenInUse:
                 requestWhenInUseAuthorization()
             }
-            retainCycle = self
+
+            promise.done { _ in
+                self.retainCycle = nil
+            }
         }
 
         func iOS11Check() {
@@ -248,9 +253,6 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
             } else {
                 fulfill(initialAuthorizationState)
             }
-        }
-        promise.done { _ in
-            self.retainCycle = nil
         }
     #endif
     }
