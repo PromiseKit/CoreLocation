@@ -63,7 +63,11 @@ extension CLLocationManager {
     }
 
     @objc static func pmk_authorizationStatus() -> CLAuthorizationStatus {
+    #if os(macOS)
+        return .authorized
+    #else
         return .authorizedWhenInUse
+    #endif
     }
 }
 
