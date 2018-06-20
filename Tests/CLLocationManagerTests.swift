@@ -80,11 +80,11 @@ func swizzle(_ foo: AnyClass, _ from: Selector, isClassMethod: Bool = false, bod
     let swizzledMethod: Method
 
     if isClassMethod {
-        originalMethod = class_getClassMethod(foo, from)
-        swizzledMethod = class_getClassMethod(foo, Selector("pmk_\(from)"))
+        originalMethod = class_getClassMethod(foo, from)!
+        swizzledMethod = class_getClassMethod(foo, Selector("pmk_\(from)"))!
     } else {
-        originalMethod = class_getInstanceMethod(foo, from)
-        swizzledMethod = class_getInstanceMethod(foo, Selector("pmk_\(from)"))
+        originalMethod = class_getInstanceMethod(foo, from)!
+        swizzledMethod = class_getInstanceMethod(foo, Selector("pmk_\(from)"))!
     }
 
     method_exchangeImplementations(originalMethod, swizzledMethod)

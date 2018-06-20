@@ -12,23 +12,37 @@ matrix:
     - {osx_image: xcode9.2, env: 'SWFT=3.2  PLAT=tvOS     DST="OS=11.2,name=Apple TV"'}
     - {osx_image: xcode9.2, env: 'SWFT=3.2  PLAT=watchOS  DST="OS=4.2,name=Apple Watch - 38mm"'}
 
+    - {osx_image: xcode9.4, env: 'SWFT=3.3  PLAT=macOS    DST="arch=x86_64"'}
+    - {osx_image: xcode9.4, env: 'SWFT=3.3  PLAT=iOS      DST="OS=11.4,name=iPhone SE"'}
+    - {osx_image: xcode9.4, env: 'SWFT=3.3  PLAT=tvOS     DST="OS=11.4,name=Apple TV"'}
+    - {osx_image: xcode9.4, env: 'SWFT=3.3  PLAT=watchOS  DST="OS=4.3,name=Apple Watch - 38mm"'}
+
     - {osx_image: xcode9.2, env: 'SWFT=4.0  PLAT=macOS    DST="arch=x86_64"'}
-    - {osx_image: xcode9.2, env: 'SWFT=4.0  PLAT=iOS      DST="OS=8.4,name=iPhone 4s"'}
-    - {osx_image: xcode9.2, env: 'SWFT=4.0  PLAT=iOS      DST="OS=9.3,name=iPhone SE"'}
-    - {osx_image: xcode9.2, env: 'SWFT=4.0  PLAT=iOS      DST="OS=10.3.1,name=iPhone SE"'}
     - {osx_image: xcode9.2, env: 'SWFT=4.0  PLAT=iOS      DST="OS=11.2,name=iPhone SE"'}
-    - {osx_image: xcode9.2, env: 'SWFT=4.0  PLAT=tvOS     DST="OS=10.2,name=Apple TV 1080p"'}
     - {osx_image: xcode9.2, env: 'SWFT=4.0  PLAT=tvOS     DST="OS=11.2,name=Apple TV"'}
-    - {osx_image: xcode9.2, env: 'SWFT=4.0  PLAT=watchOS  DST="OS=3.2,name=Apple Watch - 38mm"'}
     - {osx_image: xcode9.2, env: 'SWFT=4.0  PLAT=watchOS  DST="OS=4.2,name=Apple Watch - 38mm"'}
+
+    - {osx_image: xcode9.4, env: 'SWFT=4.1  PLAT=macOS    DST="arch=x86_64" TEST=1'}
+    - {osx_image: xcode9.4, env: 'SWFT=4.1  PLAT=iOS      DST="OS=8.4,name=iPhone 4s"'}
+    - {osx_image: xcode9.4, env: 'SWFT=4.1  PLAT=iOS      DST="OS=9.3,name=iPhone 5s"'}
+    - {osx_image: xcode9.4, env: 'SWFT=4.1  PLAT=iOS      DST="OS=10.3.1,name=iPhone SE"'}
+    - {osx_image: xcode9.4, env: 'SWFT=4.1  PLAT=iOS      DST="OS=11.4,name=iPhone 5s" TEST=1'}
+    - {osx_image: xcode9.3, env: 'SWFT=4.1  PLAT=tvOS     DST="OS=10.2,name=Apple TV 1080p"'}
+    - {osx_image: xcode9.4, env: 'SWFT=4.1  PLAT=tvOS     DST="OS=11.4,name=Apple TV" TEST=1'}
+    - {osx_image: xcode9.3, env: 'SWFT=4.1  PLAT=watchOS  DST="OS=3.2,name=Apple Watch - 38mm"'}
+    - {osx_image: xcode9.4, env: 'SWFT=4.1  PLAT=watchOS  DST="OS=4.3,name=Apple Watch - 38mm"'}
+
 cache:
   directories:
   - Carthage
 before_install:
   - carthage bootstrap --cache-builds --no-use-binaries --platform $PLAT --verbose
 install:
-  - xcodebuild -scheme PMKCoreLocation -quiet -destination "$DST" SWIFT_VERSION=$SWFT SWIFT_TREAT_WARNINGS_AS_ERRORS=YES build
+  - xcodebuild -scheme PMKCoreLocation -target PMKCoreLocation -quiet -destination "$DST" SWIFT_VERSION=$SWFT SWIFT_TREAT_WARNINGS_AS_ERRORS=YES build
+  - if [[ "$TEST" == "1" ]]; then
+      xcodebuild -scheme PMKCoreLocation -target PMKCLTests -destination "$DST" build;
+    fi
 script:
-  - if [ "$PLAT" != "watchOS" ]; then
+  - if [[ "$TEST" == "1" ]]; then
       xcodebuild -scheme PMKCoreLocation -destination "$DST" test;
     fi
