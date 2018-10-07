@@ -97,7 +97,7 @@ extension CLLocationManager {
     }
 }
 
-private class LocationManager: CLLocationManager, CLLocationManagerDelegate {
+private class LocationManager: CLLocationManager, CLLocationManagerDelegate, CancellableTask {
     let (promise, seal) = Promise<[CLLocation]>.pending()
     let satisfyingBlock: ((CLLocation) -> Bool)?
 
@@ -120,6 +120,9 @@ private class LocationManager: CLLocationManager, CLLocationManagerDelegate {
         satisfyingBlock = block
         super.init()
         delegate = self
+
+        promise.setCancellableTask(self, reject: seal.reject)
+        
     #if !os(tvOS)
         startUpdatingLocation()
     #else
@@ -138,6 +141,13 @@ private class LocationManager: CLLocationManager, CLLocationManagerDelegate {
             seal.reject(error)
         }
     }
+    
+    func cancel() {
+        self.stopUpdatingLocation()
+        isCancelled = true
+    }
+    
+    var isCancelled = false
 }
 
 
@@ -203,13 +213,15 @@ extension CLLocationManager {
 }
 
 @available(iOS 8, *)
-private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate {
+private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate, CancellableTask {
     let (promise, fulfill) = Guarantee<CLAuthorizationStatus>.pending()
     var retainCycle: AuthorizationCatcher?
     let initialAuthorizationState = CLLocationManager.authorizationStatus()
 
     init(type: PMKCLAuthorizationType) {
         super.init()
+
+        promise.setCancellableTask(self)
 
         func ask(type: PMKCLAuthorizationType) {
             delegate = self
@@ -263,6 +275,13 @@ private class AuthorizationCatcher: CLLocationManager, CLLocationManagerDelegate
             fulfill(status)
         }
     }
+    
+    func cancel() {
+        self.retainCycle = nil
+        isCancelled = true
+    }
+    
+    var isCancelled = false
 }
 
 #endif
@@ -305,3 +324,43 @@ private enum PMKCLAuthorizationType {
     case always
     case whenInUse
 }
+
+//////////////////////////////////////////////////////////// Cancellable wrappers
+
+extension CLLocationManager {
+    /**
+     Request the current location, with the ability to cancel the request.
+     - Note: to obtain a single location use `Promise.lastValue`
+     - Parameters:
+       - authorizationType: requestAuthorizationType: We read your Info plist and try to
+         determine the authorization type we should request automatically. If you
+         want to force one or the other, change this parameter from its default
+         value.
+       - block: A block by which to perform any filtering of the locations that are
+         returned. In order to only retrieve accurate locations, only return true if the
+         locations horizontal accuracy < 50
+     - Returns: A new promise that fulfills with the most recent CLLocation that satisfies
+       the provided block if it exists. If the block does not exist, simply return the
+       last location.
+     */
+    public class func cancellableRequestLocation(authorizationType: RequestAuthorizationType = .automatic, satisfying block: ((CLLocation) -> Bool)? = nil) -> CancellablePromise<[CLLocation]> {
+        return cancellable(requestLocation(authorizationType: authorizationType, satisfying: block))
+    }
+}
+
+
+#if !os(macOS)
+
+extension CLLocationManager {
+    /**
+      Request CoreLocation authorization from the user
+      - Note: By default we try to determine the authorization type you want by inspecting your Info.plist
+      - Note: This method will not perform upgrades from “when-in-use” to “always” unless you specify `.always` for the value of `type`.
+     */
+    @available(iOS 8, tvOS 9, watchOS 2, *)
+    public class func cancellableRequestAuthorization(type requestedAuthorizationType: RequestAuthorizationType = .automatic) -> CancellablePromise<CLAuthorizationStatus> {
+        return cancellable(requestAuthorization(type: requestedAuthorizationType))
+    }
+}
+
+#endif
