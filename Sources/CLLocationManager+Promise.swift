@@ -43,6 +43,8 @@ extension CLLocationManager {
      - Returns: A new promise that fulfills with the most recent CLLocation that satisfies
        the provided block if it exists. If the block does not exist, simply return the
        last location.
+     - Note: cancelling this promise will cancel the underlying task
+     - SeeAlso: [Cancellation](http://promisekit.org/docs/)
      */
     public class func requestLocation(authorizationType: RequestAuthorizationType = .automatic, satisfying block: ((CLLocation) -> Bool)? = nil) -> Promise<[CLLocation]> {
 
@@ -158,6 +160,8 @@ extension CLLocationManager {
       Request CoreLocation authorization from the user
       - Note: By default we try to determine the authorization type you want by inspecting your Info.plist
       - Note: This method will not perform upgrades from “when-in-use” to “always” unless you specify `.always` for the value of `type`.
+      - Note: cancelling this promise will cancel the underlying task
+      - SeeAlso: [Cancellation](http://promisekit.org/docs/)
      */
     @available(iOS 8, tvOS 9, watchOS 2, *)
     public class func requestAuthorization(type requestedAuthorizationType: RequestAuthorizationType = .automatic) -> Guarantee<CLAuthorizationStatus> {
@@ -324,43 +328,3 @@ private enum PMKCLAuthorizationType {
     case always
     case whenInUse
 }
-
-//////////////////////////////////////////////////////////// Cancellable wrappers
-
-extension CLLocationManager {
-    /**
-     Request the current location, with the ability to cancel the request.
-     - Note: to obtain a single location use `Promise.lastValue`
-     - Parameters:
-       - authorizationType: requestAuthorizationType: We read your Info plist and try to
-         determine the authorization type we should request automatically. If you
-         want to force one or the other, change this parameter from its default
-         value.
-       - block: A block by which to perform any filtering of the locations that are
-         returned. In order to only retrieve accurate locations, only return true if the
-         locations horizontal accuracy < 50
-     - Returns: A new promise that fulfills with the most recent CLLocation that satisfies
-       the provided block if it exists. If the block does not exist, simply return the
-       last location.
-     */
-    public class func cancellableRequestLocation(authorizationType: RequestAuthorizationType = .automatic, satisfying block: ((CLLocation) -> Bool)? = nil) -> CancellablePromise<[CLLocation]> {
-        return cancellable(requestLocation(authorizationType: authorizationType, satisfying: block))
-    }
-}
-
-
-#if !os(macOS)
-
-extension CLLocationManager {
-    /**
-      Request CoreLocation authorization from the user
-      - Note: By default we try to determine the authorization type you want by inspecting your Info.plist
-      - Note: This method will not perform upgrades from “when-in-use” to “always” unless you specify `.always` for the value of `type`.
-     */
-    @available(iOS 8, tvOS 9, watchOS 2, *)
-    public class func cancellableRequestAuthorization(type requestedAuthorizationType: RequestAuthorizationType = .automatic) -> CancellablePromise<CLAuthorizationStatus> {
-        return cancellable(requestAuthorization(type: requestedAuthorizationType))
-    }
-}
-
-#endif

@@ -80,7 +80,7 @@ extension Test_CLLocationManager_Swift {
                 let block: ((CLLocation) -> Bool) = { location in
                     return location.coordinate.latitude == dummy.last?.coordinate.latitude
                 }
-                let p = CLLocationManager.cancellableRequestLocation(satisfying: block).done { _ in
+                let p = cancellable(CLLocationManager.requestLocation(satisfying: block)).done { _ in
                     XCTFail("not cancelled")
                 }.catch(policy: .allErrors) { error in
                     error.isCancelled ? ex.fulfill() : XCTFail("error \(error)")
@@ -97,7 +97,7 @@ extension Test_CLLocationManager_Swift {
     func testCancel_requestAuthorization() {
         let ex = expectation(description: "")
 
-        let p = CLLocationManager.cancellableRequestAuthorization().done { _ in
+        let p = cancellable(CLLocationManager.requestAuthorization()).done { _ in
             XCTFail("not cancelled")
         }.catch(policy: .allErrors) { error in
             error.isCancelled ? ex.fulfill() : XCTFail("error \(error)")
