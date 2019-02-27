@@ -96,6 +96,25 @@ class CLGeocoderTests: XCTestCase {
         }
         waitForExpectations(timeout: 1)
     }
+    
+    func test_reverseGeocodeLocationLocale() {
+        guard #available(iOS 11.0, OSX 10.13, watchOS 4.0, *) else { return }
+        
+        class MockGeocoder: CLGeocoder {
+            override func reverseGeocodeLocation(_ location: CLLocation, preferredLocale locale: Locale?, completionHandler: @escaping CLGeocodeCompletionHandler) {
+                after(.seconds(0)).done {
+                    completionHandler([dummyPlacemark], nil)
+                }
+            }
+        }
+        
+        let ex = expectation(description: "")
+        MockGeocoder().reverseGeocode(location: CLLocation(), preferredLocale: nil).done { x in
+            XCTAssertEqual(x, [dummyPlacemark])
+            ex.fulfill()
+        }
+        waitForExpectations(timeout: 1)
+    }
 #endif
 }
 
