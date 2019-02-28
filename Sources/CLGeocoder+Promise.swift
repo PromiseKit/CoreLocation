@@ -62,6 +62,14 @@ extension CLGeocoder {
             geocodePostalAddress(postalAddress, preferredLocale: locale, completionHandler: seal.resolve)
         }
     }
+
+    /// Submits a reverse-geocoding request for the specified location and a preferred locale.
+    @available(iOS 11.0, OSX 10.13, watchOS 4.0, *)
+    public func reverseGeocode(location: CLLocation, preferredLocale locale: Locale?) -> Promise<[CLPlacemark]> {
+        return Promise { seal in
+            reverseGeocodeLocation(location, preferredLocale: locale, completionHandler: seal.resolve)
+        }
+    }
 #endif
 }
 
