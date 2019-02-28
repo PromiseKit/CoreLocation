@@ -109,7 +109,7 @@ class CLGeocoderTests: XCTestCase {
         }
         
         let ex = expectation(description: "")
-        MockGeocoder().reverseGeocodeLocation(CLLocation(), preferredLocale: nil).done { x in
+        MockGeocoder().reverseGeocode(location: CLLocation(), preferredLocale: nil).done { x in
             XCTAssertEqual(x, [dummyPlacemark])
             ex.fulfill()
         }
