@@ -1,6 +1,6 @@
 # PromiseKit CoreLocation Extensions ![Build Status]
 
-This project adds promises to Apple’s MapKit framework.
+This project adds promises to Apple’s CoreLocation framework.
 
 ## CocoaPods
 
