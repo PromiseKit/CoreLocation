@@ -5,20 +5,20 @@ This project adds promises to Apple’s CoreLocation framework.
 ## CocoaPods
 
 ```ruby
-pod "PromiseKit/CoreLocation", "~> 3.1.2"
+pod "PromiseKit/CoreLocation", "~> 6.0"
 ```
 
 The extensions are built into `PromiseKit.framework` thus nothing else is needed.
 
 ## Carthage
 
-```ruby
+```ogdl
 github "PromiseKit/CoreLocation" ~> 3.1.2
 ```
 
 ## Swift Package Manager
 
-```ruby
+```swift
 dependencies: [
     .package(url: "https://github.com/PromiseKit/CoreLocation.git", .upToNextMajor(from: "3.1.2"))
 ]
