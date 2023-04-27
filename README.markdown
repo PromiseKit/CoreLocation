@@ -12,8 +12,16 @@ The extensions are built into `PromiseKit.framework` thus nothing else is needed
 
 ## Carthage
 
-```ruby
-github "PromiseKit/CoreLocation" ~> 3.0
+```ogdl
+github "PromiseKit/CoreLocation" ~> 3.1.2
+```
+
+## Swift Package Manager
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/PromiseKit/CoreLocation.git", .upToNextMajor(from: "3.1.2"))
+]
 ```
 
 The extensions are built into their own framework:
