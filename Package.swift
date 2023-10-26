@@ -17,7 +17,7 @@ let package = Package(
             targets: ["PMKCoreLocation"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/mxcl/PromiseKit.git", from: "6.0.0"),
+        .package(url: "https://github.com/mxcl/PromiseKit.git", from: "8.0.0"),
     ],
     targets: [
         .target(
