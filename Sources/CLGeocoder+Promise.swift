@@ -26,6 +26,7 @@ extension CLGeocoder {
 
     /// Submits a forward-geocoding request using the specified address dictionary.
     @available(iOS, deprecated: 11.0)
+    @available(macOS, deprecated: 10.13)
     public func geocode(_ addressDictionary: [String: String]) -> Promise<[CLPlacemark]> {
         return Promise { seal in
             geocodeAddressDictionary(addressDictionary, completionHandler: seal.resolve)

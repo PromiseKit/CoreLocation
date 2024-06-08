@@ -20,11 +20,13 @@ class CLGeocoderTests: XCTestCase {
         MockGeocoder().reverseGeocode(location: CLLocation()).done { x in
             XCTAssertEqual(x, [dummyPlacemark])
             ex.fulfill()
-        }
+        }.cauterize()
         waitForExpectations(timeout: 1)
     }
 
     func test_geocodeAddressDictionary() {
+        guard #available(iOS 11.0, macOS 10.13, watchOS 4.0, *) else { return }
+
         class MockGeocoder: CLGeocoder {
             override func geocodeAddressDictionary(_ addressDictionary: [AnyHashable : Any], completionHandler: @escaping CLGeocodeCompletionHandler) {
                 after(.seconds(0)).done {
@@ -37,7 +39,7 @@ class CLGeocoderTests: XCTestCase {
         MockGeocoder().geocode([:]).done { x in
             XCTAssertEqual(x, [dummyPlacemark])
             ex.fulfill()
-        }
+        }.cauterize()
         waitForExpectations(timeout: 1)
     }
 
@@ -54,13 +56,13 @@ class CLGeocoderTests: XCTestCase {
         MockGeocoder().geocode("").done { x in
             XCTAssertEqual(x, [dummyPlacemark])
             ex.fulfill()
-        }
+        }.cauterize()
         waitForExpectations(timeout: 1)
     }
 
 #if !os(tvOS) && swift(>=3.2)
     func test_geocodePostalAddress() {
-        guard #available(iOS 11.0, OSX 10.13, watchOS 4.0, *) else { return }
+        guard #available(iOS 11.0, macOS 10.13, watchOS 4.0, *) else { return }
 
         class MockGeocoder: CLGeocoder {
             override func geocodePostalAddress(_ postalAddress: CNPostalAddress, completionHandler: @escaping CLGeocodeCompletionHandler) {
@@ -74,7 +76,7 @@ class CLGeocoderTests: XCTestCase {
         MockGeocoder().geocodePostalAddress(CNPostalAddress()).done { x in
             XCTAssertEqual(x, [dummyPlacemark])
             ex.fulfill()
-        }
+        }.cauterize()
         waitForExpectations(timeout: 1)
     }
 
@@ -93,12 +95,12 @@ class CLGeocoderTests: XCTestCase {
         MockGeocoder().geocodePostalAddress(CNPostalAddress(), preferredLocale: nil).done { x in
             XCTAssertEqual(x, [dummyPlacemark])
             ex.fulfill()
-        }
+        }.cauterize()
         waitForExpectations(timeout: 1)
     }
     
     func test_reverseGeocodeLocationLocale() {
-        guard #available(iOS 11.0, OSX 10.13, watchOS 4.0, *) else { return }
+        guard #available(iOS 11.0, macOS 10.13, watchOS 4.0, *) else { return }
         
         class MockGeocoder: CLGeocoder {
             override func reverseGeocodeLocation(_ location: CLLocation, preferredLocale locale: Locale?, completionHandler: @escaping CLGeocodeCompletionHandler) {
@@ -112,7 +114,7 @@ class CLGeocoderTests: XCTestCase {
         MockGeocoder().reverseGeocode(location: CLLocation(), preferredLocale: nil).done { x in
             XCTAssertEqual(x, [dummyPlacemark])
             ex.fulfill()
-        }
+        }.cauterize()
         waitForExpectations(timeout: 1)
     }
 #endif
